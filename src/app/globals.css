@@ -1,0 +1,228 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html,
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* --- Page canvas ------------------------------------------------------ */
+
+.docmaker-page {
+  width: 816px; /* 8.5in @ 96dpi */
+  min-height: 1056px; /* 11in @ 96dpi */
+}
+
+.docmaker-page-content {
+  padding: 96px; /* 1in margins */
+  min-height: 1056px;
+  outline: none;
+}
+
+.docmaker-page-content:focus {
+  outline: none;
+}
+
+/* --- Rich text typography --------------------------------------------- */
+
+.docmaker-page-content h1 {
+  font-size: 2em;
+  font-weight: 700;
+  margin: 0.6em 0 0.3em;
+  line-height: 1.2;
+}
+
+.docmaker-page-content h2 {
+  font-size: 1.5em;
+  font-weight: 700;
+  margin: 0.6em 0 0.3em;
+  line-height: 1.25;
+}
+
+.docmaker-page-content h3 {
+  font-size: 1.25em;
+  font-weight: 700;
+  margin: 0.6em 0 0.3em;
+}
+
+.docmaker-page-content h4 {
+  font-size: 1.1em;
+  font-weight: 700;
+  margin: 0.6em 0 0.3em;
+}
+
+.docmaker-page-content p {
+  margin: 0.5em 0;
+  line-height: 1.6;
+}
+
+.docmaker-page-content ul,
+.docmaker-page-content ol {
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+
+.docmaker-page-content ul {
+  list-style: disc;
+}
+
+.docmaker-page-content ol {
+  list-style: decimal;
+}
+
+.docmaker-page-content li p {
+  margin: 0;
+}
+
+.docmaker-page-content ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0.25em;
+}
+
+.docmaker-page-content ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+}
+
+.docmaker-page-content ul[data-type="taskList"] li > label {
+  margin-top: 0.3em;
+}
+
+.docmaker-page-content blockquote {
+  border-left: 3px solid #cbd5e1;
+  margin: 0.75em 0;
+  padding-left: 1em;
+  color: #475569;
+}
+
+.docmaker-page-content code {
+  background: #f1f5f9;
+  border-radius: 4px;
+  padding: 0.15em 0.35em;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.9em;
+}
+
+.docmaker-page-content pre {
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 6px;
+  padding: 0.75em 1em;
+  overflow-x: auto;
+}
+
+.docmaker-page-content pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+.docmaker-page-content hr {
+  border: none;
+  border-top: 2px solid #e2e8f0;
+  margin: 1.5em 0;
+}
+
+.docmaker-page-content a {
+  color: #1971c2;
+  text-decoration: underline;
+}
+
+.docmaker-page-content img.docmaker-image {
+  max-width: 100%;
+  border-radius: 4px;
+}
+
+.docmaker-page-content table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 0.75em 0;
+}
+
+.docmaker-page-content table td,
+.docmaker-page-content table th {
+  border: 1px solid #cbd5e1;
+  padding: 6px 10px;
+  vertical-align: top;
+  position: relative;
+}
+
+.docmaker-page-content table th {
+  background: #f8fafc;
+  font-weight: 600;
+  text-align: left;
+}
+
+.docmaker-page-content .selectedCell::after {
+  background: rgba(59, 130, 246, 0.15);
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.docmaker-page-content .column-resize-handle {
+  background-color: #3b82f6;
+  bottom: 0;
+  position: absolute;
+  right: -2px;
+  pointer-events: none;
+  top: 0;
+  width: 4px;
+}
+
+.docmaker-page-content p.is-editor-empty:first-child::before {
+  color: #94a3b8;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* --- Print / PDF -------------------------------------------------------- */
+
+@media print {
+  @page {
+    size: letter;
+    margin: 0;
+  }
+
+  html,
+  body {
+    background: #ffffff;
+    height: auto;
+    overflow: visible;
+  }
+
+  .docmaker-app-root,
+  .docmaker-body,
+  .docmaker-editor-shell,
+  .docmaker-scroll-area {
+    height: auto !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+  }
+
+  .docmaker-page {
+    width: auto;
+    min-height: 0;
+    box-shadow: none !important;
+    margin: 0 !important;
+  }
+}
