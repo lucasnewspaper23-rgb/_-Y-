@@ -38,17 +38,18 @@ export default function PageEditor({
   const characters = editor?.storage.characterCount.characters() ?? 0;
 
   return (
-    <div className="docmaker-editor-shell flex h-full flex-1 flex-col overflow-hidden bg-slate-100">
+    <div className="docmaker-editor-shell flex h-full flex-1 flex-col overflow-hidden bg-surface-muted">
       <div className="print:hidden">
         <Ribbon editor={editor} />
       </div>
-      <div className="docmaker-scroll-area flex-1 overflow-y-auto px-8 py-8">
-        <div className="docmaker-page mx-auto bg-white shadow-md">
+      <div className="docmaker-scroll-area flex-1 overflow-y-auto px-8 py-10">
+        <div className="docmaker-page mx-auto bg-white">
           <EditorContent editor={editor} />
         </div>
       </div>
-      <div className="flex items-center justify-end gap-4 border-t border-slate-200 bg-white px-4 py-1.5 text-xs text-slate-500 print:hidden">
+      <div className="flex items-center justify-end gap-3 border-t border-border-soft bg-white px-4 py-1.5 text-xs text-ink-400 print:hidden">
         <span>{words} words</span>
+        <span className="text-border-strong">·</span>
         <span>{characters} characters</span>
       </div>
     </div>

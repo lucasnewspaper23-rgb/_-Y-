@@ -24,6 +24,8 @@ import {
   Redo2,
   Eraser,
   RemoveFormatting,
+  ChevronDown,
+  Check,
 } from "lucide-react";
 import { useCallback, useState } from "react";
 
@@ -39,16 +41,7 @@ const FONT_FAMILIES = [
 
 const FONT_SIZES = ["10px", "12px", "14px", "16px", "18px", "20px", "24px", "28px", "32px", "40px"];
 
-const TEXT_COLORS = [
-  "#1f2328",
-  "#e03131",
-  "#f08c00",
-  "#2f9e44",
-  "#1971c2",
-  "#7048e8",
-  "#c2255c",
-  "#495057",
-];
+const TEXT_COLORS = ["#17151f", "#e03131", "#e8590c", "#2f9e44", "#1971c2", "#6d5ce8", "#c2255c", "#495057"];
 
 const HIGHLIGHT_COLORS = ["#fff3bf", "#d3f9d8", "#ffe3e3", "#d0ebff", "#eebefa", "#ffec99"];
 
@@ -74,8 +67,8 @@ function ToolbarButton({
       disabled={disabled}
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
-      className={`inline-flex h-8 w-8 items-center justify-center rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-        active ? "bg-blue-100 text-blue-700" : "text-slate-700 hover:bg-slate-200"
+      className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors disabled:pointer-events-none disabled:opacity-30 ${
+        active ? "bg-accent-100 text-accent-700" : "text-ink-600 hover:bg-ink-900/[0.06] hover:text-ink-900"
       }`}
     >
       {children}
@@ -84,7 +77,79 @@ function ToolbarButton({
 }
 
 function Divider() {
-  return <div className="mx-1 h-6 w-px self-center bg-slate-300" />;
+  return <div className="mx-1.5 h-6 w-px self-center bg-border-soft" />;
+}
+
+function ToolbarSelect({
+  title,
+  value,
+  onChange,
+  className = "",
+  children,
+}: {
+  title: string;
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="relative">
+      <select
+        title={title}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`h-8 appearance-none rounded-lg border border-border-strong bg-white pl-2.5 pr-6 text-sm text-ink-700 outline-none transition-colors hover:border-accent-300 focus:border-accent-400 focus:ring-2 focus:ring-accent-100 ${className}`}
+      >
+        {children}
+      </select>
+      <ChevronDown size={13} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-ink-400" />
+    </div>
+  );
+}
+
+function ColorPopover({
+  colors,
+  activeColor,
+  onPick,
+  onReset,
+  resetLabel,
+}: {
+  colors: string[];
+  activeColor?: string;
+  onPick: (color: string) => void;
+  onReset: () => void;
+  resetLabel: string;
+}) {
+  return (
+    <div className="absolute z-20 mt-2 w-44 rounded-xl border border-border-soft bg-white p-3 shadow-xl shadow-ink-900/10">
+      <div className="grid grid-cols-4 gap-2">
+        {colors.map((c) => (
+          <button
+            key={c}
+            type="button"
+            title={c}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => onPick(c)}
+            className="relative flex h-7 w-7 items-center justify-center rounded-full ring-1 ring-inset ring-black/10 transition-transform hover:scale-110"
+            style={{ background: c }}
+          >
+            {activeColor?.toLowerCase() === c.toLowerCase() && (
+              <Check size={14} className="text-white drop-shadow-[0_0_1px_rgba(0,0,0,0.6)]" />
+            )}
+          </button>
+        ))}
+      </div>
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={onReset}
+        className="mt-3 w-full rounded-md py-1 text-left text-xs font-medium text-accent-600 transition-colors hover:bg-accent-50 hover:px-2"
+      >
+        {resetLabel}
+      </button>
+    </div>
+  );
 }
 
 export default function Ribbon({ editor }: { editor: Editor | null }) {
@@ -111,8 +176,11 @@ export default function Ribbon({ editor }: { editor: Editor | null }) {
 
   if (!editor) return null;
 
+  const currentColor = editor.getAttributes("textStyle").color as string | undefined;
+  const currentHighlight = editor.getAttributes("highlight").color as string | undefined;
+
   return (
-    <div className="flex flex-wrap items-center gap-0.5 border-b border-slate-200 bg-slate-50 px-3 py-1.5">
+    <div className="flex flex-wrap items-center gap-0.5 border-b border-border-soft bg-white px-3 py-2">
       <ToolbarButton title="Undo" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()}>
         <Undo2 size={16} />
       </ToolbarButton>
@@ -122,9 +190,8 @@ export default function Ribbon({ editor }: { editor: Editor | null }) {
 
       <Divider />
 
-      <select
+      <ToolbarSelect
         title="Paragraph style"
-        className="h-8 rounded border border-slate-300 bg-white px-1 text-sm text-slate-700"
         value={
           editor.isActive("heading", { level: 1 })
             ? "1"
@@ -136,8 +203,7 @@ export default function Ribbon({ editor }: { editor: Editor | null }) {
                   ? "4"
                   : "0"
         }
-        onChange={(e) => {
-          const v = e.target.value;
+        onChange={(v) => {
           if (v === "0") editor.chain().focus().setParagraph().run();
           else editor.chain().focus().toggleHeading({ level: Number(v) as 1 | 2 | 3 | 4 }).run();
         }}
@@ -147,14 +213,13 @@ export default function Ribbon({ editor }: { editor: Editor | null }) {
         <option value="2">Heading 2</option>
         <option value="3">Heading 3</option>
         <option value="4">Heading 4</option>
-      </select>
+      </ToolbarSelect>
 
-      <select
+      <ToolbarSelect
         title="Font family"
-        className="h-8 w-32 rounded border border-slate-300 bg-white px-1 text-sm text-slate-700"
+        className="w-32"
         value={(editor.getAttributes("textStyle").fontFamily as string) ?? ""}
-        onChange={(e) => {
-          const v = e.target.value;
+        onChange={(v) => {
           if (v) editor.chain().focus().setFontFamily(v).run();
           else editor.chain().focus().unsetFontFamily().run();
         }}
@@ -164,14 +229,13 @@ export default function Ribbon({ editor }: { editor: Editor | null }) {
             {f.label}
           </option>
         ))}
-      </select>
+      </ToolbarSelect>
 
-      <select
+      <ToolbarSelect
         title="Font size"
-        className="h-8 w-20 rounded border border-slate-300 bg-white px-1 text-sm text-slate-700"
+        className="w-[4.5rem]"
         value={(editor.getAttributes("textStyle").fontSize as string) ?? ""}
-        onChange={(e) => {
-          const v = e.target.value;
+        onChange={(v) => {
           if (v) editor.chain().focus().setFontSize(v).run();
           else editor.chain().focus().unsetFontSize().run();
         }}
@@ -182,7 +246,7 @@ export default function Ribbon({ editor }: { editor: Editor | null }) {
             {s.replace("px", "")}
           </option>
         ))}
-      </select>
+      </ToolbarSelect>
 
       <Divider />
 
@@ -213,74 +277,67 @@ export default function Ribbon({ editor }: { editor: Editor | null }) {
       <Divider />
 
       <div className="relative">
-        <ToolbarButton title="Text color" onClick={() => setShowTextColor((s) => !s)}>
+        <ToolbarButton
+          title="Text color"
+          active={showTextColor}
+          onClick={() => {
+            setShowHighlight(false);
+            setShowTextColor((s) => !s);
+          }}
+        >
           <span className="relative inline-flex h-4 w-4 items-center justify-center font-serif text-sm font-bold">
             A
-            <span
-              className="absolute -bottom-1 left-0 right-0 h-1 rounded"
-              style={{ background: (editor.getAttributes("textStyle").color as string) || "#1f2328" }}
-            />
+            <span className="absolute -bottom-1 left-0 right-0 h-1 rounded-full" style={{ background: currentColor || "#17151f" }} />
           </span>
         </ToolbarButton>
         {showTextColor && (
-          <div className="absolute z-10 mt-1 flex flex-wrap gap-1 rounded border border-slate-200 bg-white p-2 shadow-lg" style={{ width: 148 }}>
-            {TEXT_COLORS.map((c) => (
-              <button
-                key={c}
-                title={c}
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => {
-                  editor.chain().focus().setColor(c).run();
-                  setShowTextColor(false);
-                }}
-                className="h-6 w-6 rounded border border-slate-300"
-                style={{ background: c }}
-              />
-            ))}
-            <button
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => {
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setShowTextColor(false)} />
+            <ColorPopover
+              colors={TEXT_COLORS}
+              activeColor={currentColor}
+              onPick={(c) => {
+                editor.chain().focus().setColor(c).run();
+                setShowTextColor(false);
+              }}
+              onReset={() => {
                 editor.chain().focus().unsetColor().run();
                 setShowTextColor(false);
               }}
-              className="col-span-4 mt-1 w-full text-left text-xs text-slate-600 hover:underline"
-            >
-              Reset color
-            </button>
-          </div>
+              resetLabel="Reset color"
+            />
+          </>
         )}
       </div>
 
       <div className="relative">
-        <ToolbarButton title="Highlight" active={editor.isActive("highlight")} onClick={() => setShowHighlight((s) => !s)}>
+        <ToolbarButton
+          title="Highlight"
+          active={editor.isActive("highlight") || showHighlight}
+          onClick={() => {
+            setShowTextColor(false);
+            setShowHighlight((s) => !s);
+          }}
+        >
           <Highlighter size={16} />
         </ToolbarButton>
         {showHighlight && (
-          <div className="absolute z-10 mt-1 flex flex-wrap gap-1 rounded border border-slate-200 bg-white p-2 shadow-lg" style={{ width: 148 }}>
-            {HIGHLIGHT_COLORS.map((c) => (
-              <button
-                key={c}
-                title={c}
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => {
-                  editor.chain().focus().toggleHighlight({ color: c }).run();
-                  setShowHighlight(false);
-                }}
-                className="h-6 w-6 rounded border border-slate-300"
-                style={{ background: c }}
-              />
-            ))}
-            <button
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => {
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setShowHighlight(false)} />
+            <ColorPopover
+              colors={HIGHLIGHT_COLORS}
+              activeColor={currentHighlight}
+              onPick={(c) => {
+                editor.chain().focus().toggleHighlight({ color: c }).run();
+                setShowHighlight(false);
+              }}
+              onReset={() => {
                 editor.chain().focus().unsetHighlight().run();
                 setShowHighlight(false);
               }}
-              className="col-span-4 mt-1 w-full text-left text-xs text-slate-600 hover:underline"
-            >
-              Remove highlight
-            </button>
-          </div>
+              resetLabel="Remove highlight"
+            />
+          </>
         )}
       </div>
 

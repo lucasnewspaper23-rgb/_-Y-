@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronDown, Download, FileType, FileCode2, Printer, FileDown } from "lucide-react";
+import { ChevronDown, Download, FileType, FileCode2, Printer, FileDown, PenLine } from "lucide-react";
 import Sidebar from "./Sidebar";
 import PageEditor from "./PageEditor";
 import { createDoc, deleteDoc, duplicateDoc, getDoc, listDocs, saveDoc } from "@/lib/storage";
@@ -13,6 +13,7 @@ export default function DocMakerApp() {
   const [activeDoc, setActiveDoc] = useState<DocRecord | null>(null);
   const [ready, setReady] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"saved" | "saving">("saved");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Tracks the editor's live HTML for the active document, independent of
   // the debounced localStorage write, so exports never read stale content.
@@ -49,6 +50,7 @@ export default function DocMakerApp() {
         saveDoc(activeDoc.id, { content: latestContentRef.current });
       }
       latestContentRef.current = doc.content;
+      setSaveStatus("saved");
       setActiveDoc(doc);
     },
     [activeDoc]
@@ -110,6 +112,7 @@ export default function DocMakerApp() {
     (html: string) => {
       if (!activeDoc) return;
       latestContentRef.current = html;
+      setSaveStatus("saving");
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => {
         const updated = saveDoc(activeDoc.id, { content: html });
@@ -117,6 +120,7 @@ export default function DocMakerApp() {
           setDocs((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
           setActiveDoc((prev) => (prev && prev.id === updated.id ? updated : prev));
         }
+        setSaveStatus("saved");
       }, 400);
     },
     [activeDoc]
@@ -146,62 +150,74 @@ export default function DocMakerApp() {
   }, [activeDoc]);
 
   if (!ready || !activeDoc) {
-    return <div className="flex h-full items-center justify-center text-slate-400">Loading…</div>;
+    return (
+      <div className="flex h-full items-center justify-center bg-surface-muted text-sm text-ink-400">
+        Loading…
+      </div>
+    );
   }
 
   return (
     <div className="docmaker-app-root flex h-full flex-col">
-      <header className="flex items-center gap-4 border-b border-slate-200 bg-white px-4 py-2 print:hidden">
-        <div className="flex items-center gap-2 text-blue-700">
-          <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-600 text-sm font-bold text-white">D</div>
-          <span className="hidden font-semibold sm:inline">DocMaker</span>
+      <header className="flex items-center gap-4 border-b border-border-soft bg-white/95 px-4 py-2.5 shadow-[0_1px_0_0_rgba(23,21,31,0.03)] backdrop-blur print:hidden">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-accent-500 to-accent-700 text-white shadow-sm shadow-accent-600/30">
+            <PenLine size={16} strokeWidth={2.25} />
+          </div>
+          <span className="hidden font-semibold tracking-tight text-ink-900 sm:inline">DocMaker</span>
         </div>
-        <input
-          value={activeDoc.title}
-          onChange={(e) => handleTitleChange(e.target.value)}
-          placeholder="Untitled document"
-          className="flex-1 rounded px-2 py-1 text-lg font-medium text-slate-800 outline-none hover:bg-slate-100 focus:bg-slate-100"
-        />
+        <div className="h-6 w-px bg-border-soft" />
+        <div className="flex min-w-0 flex-1 items-baseline gap-3">
+          <input
+            value={activeDoc.title}
+            onChange={(e) => handleTitleChange(e.target.value)}
+            placeholder="Untitled document"
+            className="min-w-0 flex-1 truncate rounded-md border border-transparent bg-transparent px-2 py-1 text-[15px] font-medium text-ink-900 outline-none transition-colors placeholder:text-ink-400 hover:border-border-soft focus:border-accent-300 focus:bg-white focus:ring-2 focus:ring-accent-100"
+          />
+          <span className="hidden shrink-0 text-xs text-ink-400 sm:inline">
+            {saveStatus === "saving" ? "Saving…" : "Saved"}
+          </span>
+        </div>
         <div className="relative">
           <button
             type="button"
             onClick={() => setShowExportMenu((s) => !s)}
-            className="flex items-center gap-1.5 rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="flex items-center gap-1.5 rounded-lg border border-border-strong bg-white px-3 py-1.5 text-sm font-medium text-ink-700 shadow-sm transition-colors hover:border-accent-300 hover:bg-accent-50 hover:text-accent-700"
           >
-            <Download size={16} />
+            <Download size={15} />
             Export
-            <ChevronDown size={14} />
+            <ChevronDown size={14} className={`transition-transform ${showExportMenu ? "rotate-180" : ""}`} />
           </button>
           {showExportMenu && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowExportMenu(false)} />
-              <div className="absolute right-0 z-20 mt-1 w-52 overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg">
+              <div className="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-xl border border-border-soft bg-white p-1.5 shadow-xl shadow-ink-900/10">
                 <button
                   onClick={() => {
                     setShowExportMenu(false);
                     handlePrint();
                   }}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100"
+                  className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-ink-700 transition-colors hover:bg-accent-50 hover:text-accent-700"
                 >
-                  <Printer size={16} /> Print / Save as PDF
+                  <Printer size={16} className="text-ink-400" /> Print / Save as PDF
                 </button>
                 <button
                   onClick={handleExportDocx}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100"
+                  className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-ink-700 transition-colors hover:bg-accent-50 hover:text-accent-700"
                 >
-                  <FileDown size={16} /> Download as .docx
+                  <FileDown size={16} className="text-ink-400" /> Download as .docx
                 </button>
                 <button
                   onClick={handleExportHtml}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100"
+                  className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-ink-700 transition-colors hover:bg-accent-50 hover:text-accent-700"
                 >
-                  <FileCode2 size={16} /> Download as .html
+                  <FileCode2 size={16} className="text-ink-400" /> Download as .html
                 </button>
                 <button
                   onClick={handleExportText}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100"
+                  className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-ink-700 transition-colors hover:bg-accent-50 hover:text-accent-700"
                 >
-                  <FileType size={16} /> Download as .txt
+                  <FileType size={16} className="text-ink-400" /> Download as .txt
                 </button>
               </div>
             </>
